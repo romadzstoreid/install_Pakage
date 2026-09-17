@@ -1,89 +1,45 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
-RED='\033[0;31m'
 GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m'
 
-TOTAL_STEPS=6
+TOTAL=5
 STEP=0
 
-print_banner() {
-  clear
-  echo -e "${CYAN}${BOLD}"
-  echo "   ██████╗ ██████╗ ████████╗ ██╗   ██╗██████╗ "
-  echo "  ██╔════╝██╔═══██╗╚══██╔══╝ ██║   ██║██╔══██╗"
-  echo "  ╚█████╗ ╚██████╔╝   ██║    ██║   ██║██████╔╝"
-  echo "   ╚═══██╗ ╚═══██╗    ██║    ██║   ██║██╔═══╝ "
-  echo "  ██████╔╝ ██████╔╝   ██║    ╚██████╔╝██║     "
-  echo "  ╚═════╝  ╚═════╝    ╚═╝     ╚═════╝ ╚═╝     "
-  echo -e "${NC}"
-  echo -e "${BOLD}          TERMUX AUTO INSTALLER${NC}"
-  echo -e "${YELLOW}================================================${NC}"
-  echo ""
-}
-
-step() {
+bar() {
   STEP=$((STEP + 1))
-  echo ""
-  echo -e "${CYAN}${BOLD}[${STEP}/${TOTAL_STEPS}]${NC} ${BOLD}$1${NC}"
-  echo -e "${YELLOW}------------------------------------------------${NC}"
+  FILLED=$((STEP * 20 / TOTAL))
+  EMPTY=$((20 - FILLED))
+  PCT=$((STEP * 100 / TOTAL))
+  printf "\r${CYAN}["
+  printf "%0.s#" $(seq 1 $FILLED)
+  printf "%0.s." $(seq 1 $EMPTY)
+  printf "] %d%%${NC}  %s\n" "$PCT" "$1"
 }
 
-ok() {
-  echo -e "${GREEN}✔ $1${NC}"
-}
+echo -e "${BOLD}Termux Installer${NC}"
+echo ""
 
-fail() {
-  echo -e "${RED}✘ $1${NC}"
-  exit 1
-}
+bar "Update paket"
+pkg update -y && pkg upgrade -y
 
-print_banner
+bar "Install Node.js"
+pkg install nodejs -y
 
-step "Memperbarui daftar paket"
-pkg update -y && pkg upgrade -y || fail "Gagal update paket"
-ok "Paket berhasil diperbarui"
+bar "Cek versi Node & NPM"
+node -v && npm -v
 
-step "Menginstall Node.js"
-pkg install nodejs -y || fail "Gagal menginstall Node.js"
-ok "Node.js berhasil diinstall"
+bar "Inisialisasi npm"
+npm init -y > /dev/null 2>&1
 
-step "Memeriksa versi Node.js & NPM"
-NODE_VERSION=$(node -v)
-NPM_VERSION=$(npm -v)
-echo -e "   Node.js : ${GREEN}${NODE_VERSION}${NC}"
-echo -e "   NPM     : ${GREEN}${NPM_VERSION}${NC}"
-ok "Pemeriksaan versi selesai"
-
-step "Menginisialisasi proyek npm"
-npm init -y > /dev/null 2>&1 || fail "Gagal menginisialisasi npm"
-ok "package.json berhasil dibuat"
-
-step "Menginstall dependencies (axios)"
-npm install axios || fail "Gagal menginstall dependencies"
-ok "Dependencies berhasil diinstall"
-
-step "Finalisasi instalasi"
-sleep 1
-ok "Semua proses instalasi selesai"
+bar "Install axios"
+npm install axios
 
 echo ""
-echo -e "${YELLOW}================================================${NC}"
-echo -e "${GREEN}${BOLD}         INSTALASI SELESAI DENGAN SUKSES${NC}"
-echo -e "${YELLOW}================================================${NC}"
+echo -e "${GREEN}${BOLD}Instalasi selesai.${NC}"
 echo ""
-echo -e "${BOLD}Ringkasan:${NC}"
-echo -e "   Node.js : ${GREEN}${NODE_VERSION}${NC}"
-echo -e "   NPM     : ${GREEN}${NPM_VERSION}${NC}"
-echo ""
-echo -e "${BOLD}Langkah selanjutnya:${NC}"
-echo -e "   ${CYAN}1.${NC} Buat/edit file script:"
-echo -e "      ${YELLOW}nano ssweb.js${NC}"
-echo ""
-echo -e "   ${CYAN}2.${NC} Jalankan script:"
-echo -e "      ${YELLOW}node ssweb.js${NC}"
-echo ""
-echo -e "${YELLOW}================================================${NC}"
+echo "Langkah selanjutnya:"
+echo "  nano files"
+echo "  node files"
