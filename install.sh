@@ -21,7 +21,9 @@ loading() {
     local pid
     local i=0
 
-    "$@" >/dev/null 2>&1 &
+    # stdin diarahkan ke /dev/null agar kalau ada prompt tak terduga,
+    # proses langsung gagal (EOF) daripada hang selamanya menunggu input
+    "$@" </dev/null >/dev/null 2>&1 &
     pid=$!
 
     while kill -0 "$pid" 2>/dev/null; do
@@ -41,7 +43,19 @@ loading() {
     fi
 }
 
-loading "[1/5] Updating Packages" bash -c 'pkg update -y && pkg upgrade -y'
+# Mode non-interaktif: cegah pkg/apt menampilkan prompt konfirmasi
+# (misalnya soal file konfigurasi yang berubah) yang bisa membuat
+# proses di background hang tanpa pernah selesai.
+export DEBIAN_FRONTEND=noninteractive
+
+loading "[1/5] Updating Packages" bash -c '
+    pkg update -y \
+        -o Dpkg::Options::="--force-confdef" \
+        -o Dpkg::Options::="--force-confold" \
+    && pkg upgrade -y \
+        -o Dpkg::Options::="--force-confdef" \
+        -o Dpkg::Options::="--force-confold"
+'
 
 loading "[2/5] Installing Node.js" pkg install nodejs -y
 
