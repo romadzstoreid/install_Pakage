@@ -9,57 +9,61 @@ RESET='\033[0m'
 clear
 
 echo -e "${CYAN}================================${RESET}"
-echo -e "${CYAN}        TERMUX INSTALLER        ${RESET}"
+echo -e "${CYAN}        INSTALLER TERMUX        ${RESET}"
 echo -e "${CYAN}================================${RESET}"
 echo ""
 
-echo -ne "${YELLOW}[1/5] Update Package${RESET} "
-if pkg update -y >/dev/null 2>&1; then
-    echo -e "${GREEN}✓${RESET}"
-else
-    echo -e "${RED}✗${RESET}"
-    exit 1
-fi
+loading() {
+    local text="$1"
+    shift
 
-echo -ne "${YELLOW}[2/5] Upgrade Package${RESET} "
-if pkg upgrade -y >/dev/null 2>&1; then
-    echo -e "${GREEN}✓${RESET}"
-else
-    echo -e "${RED}✗${RESET}"
-    exit 1
-fi
+    local frames=("⠋" "⠙" "⠹" "⠸" "⠼" "⠴" "⠦" "⠧" "⠇" "⠏")
+    local pid
+    local i=0
 
-echo -ne "${YELLOW}[3/5] Install Basic Tools${RESET} "
-if pkg install -y nodejs python git curl wget nano >/dev/null 2>&1; then
-    echo -e "${GREEN}✓${RESET}"
-else
-    echo -e "${RED}✗${RESET}"
-    exit 1
-fi
+    "$@" >/dev/null 2>&1 &
+    pid=$!
 
-echo -ne "${YELLOW}[4/5] Check Environment${RESET} "
-if command -v node >/dev/null 2>&1 && \
-   command -v npm >/dev/null 2>&1 && \
-   command -v python >/dev/null 2>&1 && \
-   command -v git >/dev/null 2>&1; then
-    echo -e "${GREEN}✓${RESET}"
-else
-    echo -e "${RED}✗${RESET}"
-    exit 1
-fi
+    while kill -0 "$pid" 2>/dev/null; do
+        printf "\r${YELLOW}%s${RESET} ${CYAN}%s${RESET}" "$text" "${frames[i]}"
+        i=$(( (i + 1) % ${#frames[@]} ))
+        sleep 0.1
+    done
 
-echo -ne "${YELLOW}[5/5] Finalizing Installation${RESET} "
-sleep 1
-echo -e "${GREEN}✓${RESET}"
+    wait "$pid"
+    local result=$?
+
+    if [ $result -eq 0 ]; then
+        printf "\r${YELLOW}%s${RESET} ${GREEN}✓${RESET}\n" "$text"
+    else
+        printf "\r${YELLOW}%s${RESET} ${RED}✗${RESET}\n" "$text"
+        exit 1
+    fi
+}
+
+loading "[1/5] Updating Packages" bash -c 'pkg update -y && pkg upgrade -y'
+
+loading "[2/5] Installing Node.js" pkg install nodejs -y
+
+loading "[3/5] Checking Node.js" bash -c 'node -v && npm -v'
+
+loading "[4/5] Initializing NPM" npm init -y
+
+loading "[5/5] Installing Axios" npm install axios
 
 echo ""
 echo -e "${CYAN}================================${RESET}"
-echo -e "${GREEN}      INSTALLATION COMPLETE     ${RESET}"
+echo -e "${GREEN}       INSTALLATION DONE        ${RESET}"
 echo -e "${CYAN}================================${RESET}"
 echo ""
 echo -e "Node.js : ${GREEN}$(node -v)${RESET}"
 echo -e "NPM     : ${GREEN}$(npm -v)${RESET}"
-echo -e "Python  : ${GREEN}$(python --version 2>&1)${RESET}"
-echo -e "Git     : ${GREEN}$(git --version)${RESET}"
+echo -e "Axios   : ${GREEN}Installed${RESET}"
 echo ""
-echo -e "${GREEN}✓ Termux siap digunakan.${RESET}"
+echo -e "${GREEN}✓ Environment Node.js siap digunakan.${RESET}"
+echo ""
+echo -e "Buat file sesuai kebutuhan:"
+echo -e "${YELLOW}nano nama-file.js${RESET}"
+echo ""
+echo -e "Kemudian jalankan:"
+echo -e "${YELLOW}node nama-file.js${RESET}"
